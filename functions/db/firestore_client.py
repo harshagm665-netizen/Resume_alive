@@ -27,10 +27,12 @@ class FirestoreClient:
         self.db = get_db()
         
     def save_user_profile(self, profile: UserProfile) -> None:
+        if not self.db: return
         doc_ref = self.db.collection('USERS').document(profile.uid)
         doc_ref.set(profile.model_dump(mode="json"), merge=True)
         
     def get_user_profile(self, uid: str) -> Optional[UserProfile]:
+        if not self.db: return None
         doc = self.db.collection('USERS').document(uid).get()
         if doc.exists:
             return UserProfile(**doc.to_dict())
@@ -42,15 +44,18 @@ class FirestoreClient:
         import hashlib
         job_id = hashlib.md5(job.dedup_key().encode()).hexdigest()
         job.job_id = job_id
+        if not self.db: return job_id
         doc_ref = self.db.collection('JOBS').document(job_id)
         doc_ref.set(job.model_dump(mode="json"), merge=True)
         return job_id
 
     def log_search(self, session: SearchSession) -> None:
+        if not self.db: return
         doc_ref = self.db.collection('SEARCHES').document(session.search_id)
         doc_ref.set(session.model_dump(mode="json"))
 
     def save_user_job(self, user_job: UserJob) -> None:
+        if not self.db: return
         doc_ref = self.db.collection('USER_JOBS').document(user_job.id)
         doc_ref.set(user_job.model_dump(mode="json"), merge=True)
 
