@@ -41,8 +41,9 @@ class JobChunker:
         import uuid
         return {
             "chunk_id": str(uuid.uuid4()),
-            "parent_id": job.job_id,
+            "parent_id": job.dedup_key(),
             "text": text,
+            "job_data": job.model_dump(),
             "portal": job.portal,
             "company": job.company,
             "title": job.title

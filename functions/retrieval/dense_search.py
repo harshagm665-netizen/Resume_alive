@@ -29,6 +29,15 @@ class DenseSearch:
                 vectors_config=VectorParams(size=768, distance=Distance.COSINE)
             )
 
+    def clear(self):
+        if not self.client: return
+        try:
+            self.client.delete_collection(self.collection_name)
+            self._ensure_collection()
+            logger.info("Cleared dense search Qdrant collection.")
+        except Exception as e:
+            logger.error(f"Failed to clear dense collection: {e}")
+
     def index_chunks(self, chunks: List[Dict[str, Any]]):
         if not self.client or not chunks:
             return
@@ -65,7 +74,8 @@ class DenseSearch:
                 "chunk_id": str(hit.id),
                 "parent_id": hit.payload.get("parent_id"),
                 "score": hit.score,
-                "text": hit.payload.get("text", "")
+                "text": hit.payload.get("text", ""),
+                "job_data": hit.payload.get("job_data", {})
             })
         return results
 

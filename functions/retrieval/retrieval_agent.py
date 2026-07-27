@@ -27,6 +27,10 @@ class RetrievalAgent(BaseAgent):
         if not jobs:
             return
             
+        logger.info(f"[{self.name}] Clearing indexes...")
+        dense_search.clear()
+        sparse_search.clear()
+            
         logger.info(f"[{self.name}] Chunking {len(jobs)} jobs...")
         all_chunks = []
         for job in jobs:
@@ -46,5 +50,15 @@ class RetrievalAgent(BaseAgent):
         
         fused = reciprocal_rank_fusion(dense_res, sparse_res)
         
-        # Return top N parent jobs
-        return fused[:limit]
+        # Reconstruct real Job objects
+        results = []
+        for f in fused[:limit]:
+            if "chunks" in f and len(f["chunks"]) > 0:
+                chunk = f["chunks"][0]
+                job_data = chunk.get("job_data", {})
+                if job_data:
+                    job = Job(**job_data)
+                    job.hybrid_score = f.get("hybrid_score", 0.0)
+                    results.append(job)
+                    
+        return results

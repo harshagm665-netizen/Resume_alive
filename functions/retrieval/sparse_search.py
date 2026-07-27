@@ -19,6 +19,13 @@ class SparseSearch:
         self.k1 = 1.5
         self.b = 0.75
         
+    def clear(self):
+        self.documents = {}
+        self.doc_tokens = {}
+        self.df = Counter()
+        self.doc_count = 0
+        self.avgdl = 0
+        
     def _tokenize(self, text: str) -> List[str]:
         return re.findall(r'\w+', text.lower())
         
@@ -75,7 +82,8 @@ class SparseSearch:
                 "chunk_id": chunk_id,
                 "parent_id": self.documents[chunk_id]["parent_id"],
                 "score": score,
-                "text": self.documents[chunk_id]["text"]
+                "text": self.documents[chunk_id]["text"],
+                "job_data": self.documents[chunk_id].get("job_data", {})
             })
         return results
 
