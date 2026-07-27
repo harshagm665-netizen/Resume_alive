@@ -15,6 +15,14 @@ class InterviewPrepAgent(BaseAgent):
     and generates 5 targeted mock interview questions.
     """
 
+    def __init__(self):
+        super().__init__(
+            name="Interview Prep Agent",
+            role="Expert technical interviewer and career coach",
+            goal="Analyze candidate profile against a job description and generate targeted mock interview questions.",
+            task_type=TaskType.ANALYSIS
+        )
+
     @track_metrics("interview_prep_agent", "generate_questions")
     def generate_questions(self, user_profile: UserProfile, job: Job) -> List[str]:
         logger.info(f"Generating interview questions for user {user_profile.uid} on job {job.job_id}")

@@ -13,6 +13,14 @@ class ColdEmailAgent(BaseAgent):
     Drafts a personalized outreach message directed at the hiring manager or recruiter.
     """
 
+    def __init__(self):
+        super().__init__(
+            name="Cold Email Agent",
+            role="Career strategist and executive assistant",
+            goal="Write a highly personalized LinkedIn outreach message.",
+            task_type=TaskType.CREATIVE
+        )
+
     @track_metrics("cold_email_agent", "draft_email")
     def draft_email(self, user_profile: UserProfile, job: Job) -> str:
         logger.info(f"Drafting cold email for user {user_profile.uid} on job {job.job_id}")
