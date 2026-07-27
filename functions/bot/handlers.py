@@ -146,6 +146,9 @@ def handle_webhook(update: dict):
         profile.bot_state = "CONFIRMING_ROLE"
         fs_client.save_user_profile(profile)
         
+        # Ensure Redis cache is updated too
+        set_bot_state(chat_id, "CONFIRMING_ROLE")
+        
         role_md = escape_md(profile.current_role)
         status.update(f"Resume processed successfully!")
         send_message(chat_id, f"I've analyzed your resume and see you are a *{role_md}*\\.\n\nReply with *'Yes'* to search for this role in Bangalore/Remote, or type a custom query like *'AI Engineer in remote'*\\.")
