@@ -160,6 +160,11 @@ def handle_webhook(update: dict):
         return
         
     if bot_state == "CONFIRMING_ROLE":
+        if not profile:
+            set_bot_state(chat_id, "WAITING_FOR_RESUME")
+            send_message(chat_id, "I couldn't find your profile\\. Please upload your resume again or type /start\\.")
+            return
+            
         if text.lower() in ["yes", "y", "search"]:
             query = profile.current_role
             location = "Bangalore" # Default
