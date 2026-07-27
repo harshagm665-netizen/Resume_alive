@@ -13,7 +13,7 @@ class ColdEmailAgent(BaseAgent):
     Drafts a personalized outreach message directed at the hiring manager or recruiter.
     """
 
-    @track_metrics("cold_email_agent")
+    @track_metrics("cold_email_agent", "draft_email")
     def draft_email(self, user_profile: UserProfile, job: Job) -> str:
         logger.info(f"Drafting cold email for user {user_profile.uid} on job {job.job_id}")
         
