@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
@@ -35,15 +35,15 @@ async def serve_dashboard():
         return "<h1>Dashboard file not found! Make sure you are running from the project root.</h1>"
 
 @app.post("/webhook")
-async def telegram_webhook_local(request: Request):
+async def telegram_webhook_local(request: Request, background_tasks: BackgroundTasks):
     """Local webhook receiver for Telegram testing."""
     if not handle_webhook:
         return {"status": "error", "message": "Handler not loaded"}
     
     update = await request.json()
     if update:
-        # In a real scenario, this would run asynchronously
-        handle_webhook(update)
+        # Run asynchronously in the background so Telegram gets an instant 200 OK
+        background_tasks.add_task(handle_webhook, update)
     return {"status": "ok"}
 
 @app.get("/health")
