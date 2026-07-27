@@ -22,7 +22,7 @@ class FounditScraper(BaseScraper):
         url = f"{self.BASE_URL}/srp/results"
         resp = self._get(url, params=params)
         if not resp:
-            logger.warning("[Foundit] Could not reach search page.")
+            logger.debug("[Foundit] Could not reach search page.")
             return []
 
         soup = BeautifulSoup(resp.text, "lxml")

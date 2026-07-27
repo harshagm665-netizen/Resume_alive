@@ -6,10 +6,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import Optional
-import requests
+from curl_cffi import requests
+from curl_cffi.requests.errors import RequestsError
 from fake_useragent import UserAgent
 from loguru import logger
-
 
 from db.models import Job
 
@@ -21,7 +21,7 @@ class BaseScraper(ABC):
 
     def __init__(self):
         self._ua = UserAgent()
-        self._session = requests.Session()
+        self._session = requests.Session(impersonate="chrome")
         self._session.headers.update(self._default_headers())
 
     def _default_headers(self) -> dict:
@@ -39,14 +39,12 @@ class BaseScraper(ABC):
         self._session.headers["User-Agent"] = self._ua.random
         try:
             resp = self._session.get(url, params=params, timeout=timeout)
-            resp.raise_for_status()
+            if resp.status_code >= 400:
+                logger.debug(f"[{self.portal_name}] HTTP {resp.status_code} for {url}")
+                return None
             return resp
-        except requests.exceptions.HTTPError as e:
-            logger.warning(f"[{self.portal_name}] HTTP {e.response.status_code} for {url}")
-        except requests.exceptions.Timeout:
-            logger.warning(f"[{self.portal_name}] Timeout for {url}")
-        except requests.exceptions.RequestException as e:
-            logger.warning(f"[{self.portal_name}] Request error: {e}")
+        except RequestsError as e:
+            logger.debug(f"[{self.portal_name}] Request error: {e}")
         return None
 
     @abstractmethod
