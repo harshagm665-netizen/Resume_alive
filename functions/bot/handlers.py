@@ -12,8 +12,35 @@ from db.firestore_client import fs_client
 from db.models import UserProfile
 from config import TG_TOKEN
 
-_in_memory_state = {}
+import os
+
+_STATE_FILE = "local_bot_state.json"
+_PROFILES_FILE = "local_bot_profiles.json"
+
+def _load_json(file_path: str) -> dict:
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+def _save_json(file_path: str, data: dict):
+    try:
+        with open(file_path, "w") as f:
+            json.dump(data, f)
+    except Exception:
+        pass
+
+_in_memory_state = _load_json(_STATE_FILE)
 _in_memory_profiles = {}
+try:
+    _raw_profiles = _load_json(_PROFILES_FILE)
+    for k, v in _raw_profiles.items():
+        _in_memory_profiles[k] = UserProfile(**v)
+except Exception:
+    pass
 
 def send_message(chat_id: str, text: str) -> Optional[dict]:
     url = f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage"
@@ -116,6 +143,7 @@ def handle_webhook(update: dict):
         redis_client.set(f"bot_state:{uid}", state)
         fs_client.update_bot_state(uid, state)
         _in_memory_state[uid] = state
+        _save_json(_STATE_FILE, _in_memory_state)
         logger.info(f"Set bot_state for {uid} to {state}. Memory dict is now: {_in_memory_state}")
         
     text = msg.get("text", "").strip()
@@ -161,6 +189,9 @@ def handle_webhook(update: dict):
         fs_client.save_user_profile(profile)
         _in_memory_profiles[chat_id] = profile
         
+        # Serialize profiles to disk
+        _save_json(_PROFILES_FILE, {k: v.__dict__ if hasattr(v, '__dict__') else getattr(v, 'model_dump', lambda: v)() for k, v in _in_memory_profiles.items()})
+        
         # Ensure Redis cache is updated too
         set_bot_state(chat_id, "CONFIRMING_ROLE")
         
@@ -171,8 +202,14 @@ def handle_webhook(update: dict):
 
     # Handle text messages based on state
     if bot_state == "WAITING_FOR_RESUME":
-        send_message(chat_id, "Please upload your resume \\(PDF/DOCX\\) first, or type /start to restart\\.")
-        return
+        if " in " in text.lower():
+            # User wants to search directly without a resume
+            profile = _in_memory_profiles.get(chat_id) or UserProfile(uid=chat_id)
+            _in_memory_profiles[chat_id] = profile
+            bot_state = "CONFIRMING_ROLE"  # Fall through to the search logic below
+        else:
+            send_message(chat_id, "Please upload your resume \\(PDF/DOCX\\) first, or type a direct query like *'Python in Bangalore'*\\.")
+            return
         
     if bot_state == "CONFIRMING_ROLE":
         if not profile:
