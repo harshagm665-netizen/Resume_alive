@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: job-scrapper-agents
+    env: python
+    region: ohio
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn scripts.local_server:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      # You can add your actual secrets here via the Render dashboard instead of checking them into code
+      - key: llm_api_key
+        sync: false
+      - key: GEMINI
+        sync: false
+      - key: tg_token
+        sync: false

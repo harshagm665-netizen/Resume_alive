@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "job-scrapper-production",
+    "staging": "job-scrapper-staging",
+    "production": "job-scrapper-production"
+  }
+}

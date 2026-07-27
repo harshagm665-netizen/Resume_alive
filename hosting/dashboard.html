@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic Job Scraper - Monitoring</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+      import { getFirestore, collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+      
+      // Note: In production, configure this correctly or use Firebase Hosting auto-config
+      const firebaseConfig = {
+        projectId: "job-scrapper-production", // Update with your actual project ID
+      };
+      
+      const app = initializeApp(firebaseConfig);
+      window.db = getFirestore(app);
+      window.collection = collection;
+      window.query = query;
+      window.orderBy = orderBy;
+      window.limit = limit;
+      window.onSnapshot = onSnapshot;
+    </script>
+    <script src="dashboard.js" type="module" defer></script>
+</head>
+<body>
+    <header>
+        <h1>System Health Dashboard</h1>
+        <div class="status-indicator">
+            <span id="system-status" class="badge ok">Operational</span>
+        </div>
+    </header>
+    
+    <main>
+        <section class="kpi-grid">
+            <div class="kpi-card">
+                <h3>Success Rate</h3>
+                <p id="success-rate" class="metric">100%</p>
+            </div>
+            <div class="kpi-card">
+                <h3>Avg Latency</h3>
+                <p id="avg-latency" class="metric">0ms</p>
+            </div>
+            <div class="kpi-card">
+                <h3>Jobs Scraped (24h)</h3>
+                <p id="jobs-scraped" class="metric">0</p>
+            </div>
+        </section>
+
+        <section class="charts">
+            <div class="chart-container">
+                <h2>Latency Over Time</h2>
+                <canvas id="latencyChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h2>Errors by Module</h2>
+                <canvas id="errorChart"></canvas>
+            </div>
+        </section>
+
+        <section class="recent-events">
+            <h2>Recent Metrics</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Module</th>
+                        <th>Function</th>
+                        <th>Status</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody id="metrics-table-body">
+                    <!-- Populated by JS -->
+                </tbody>
+            </table>
+        </section>
+    </main>
+</body>
+</html>

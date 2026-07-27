@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "source": "functions",
+    "runtime": "python312"
+  },
+  "hosting": {
+    "public": "hosting",
+    "ignore": ["firebase.json", "**/node_modules/**"]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}
