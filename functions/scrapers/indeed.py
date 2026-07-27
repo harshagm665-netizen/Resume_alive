@@ -18,10 +18,13 @@ class IndeedScraper(BaseScraper):
         jobs: list[Job] = []
         start = 0
         page_size = 15
+        max_pages = 5
+        pages_fetched = 0
 
         logger.info(f"[Indeed] Searching: '{query}' in '{location}'")
 
-        while len(jobs) < max_results:
+        while len(jobs) < max_results and pages_fetched < max_pages:
+            pages_fetched += 1
             params = {
                 "q": query,
                 "l": location,
