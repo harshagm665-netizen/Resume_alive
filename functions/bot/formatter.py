@@ -23,7 +23,8 @@ def format_job_card(job: Job) -> str:
     text += f"💰 {salary} \\| ⏳ {experience}\n"
     
     if job.ai_score > 0:
-        text += f"🤖 Match: {job.ai_score}%"
+        score = escape_md(str(job.ai_score))
+        text += f"🤖 Match: {score}%"
         if job.metadata and job.metadata.get("match_level"):
             ml = escape_md(job.metadata['match_level'])
             text += f" \\({ml}\\)"
