@@ -23,27 +23,24 @@ class JobDiscoveryAgent:
         norm_location = resolve_location(location)
         logger.debug(f"Normalized location: {norm_location}")
         
+        import concurrent.futures
+        
         target_portals = portals if portals else self.available_portals
         all_jobs: List[Job] = []
         
-        for portal in target_portals:
+        def run_scraper(portal: str) -> List[Job]:
             if portal not in self.scrapers:
                 logger.warning(f"Portal {portal} not found.")
-                continue
+                return []
                 
             scraper = self.scrapers[portal]
+            local_jobs = []
             try:
-                # Scrapers return dicts or dataclasses, convert them to our new Job model if needed
-                # We updated db.models.Job to have the exact same fields, but let's be careful
                 raw_jobs = scraper.search(query, norm_location, max_results)
                 for rj in raw_jobs:
-                    # In python, if rj is the original dataclass, we can convert it:
                     if hasattr(rj, "__dict__"):
                         try:
-                            # if rj is already a db.models.Job, this is fine too.
-                            # The fields match because we updated models.py.
                             job_data = {k: v for k, v in rj.__dict__.items() if not k.startswith("_")}
-                            # Avoid passing non-pydantic fields
                             if 'score' in job_data:
                                 job_data['ai_score'] = float(job_data.pop('score'))
                             if 'match_level' in job_data:
@@ -55,12 +52,18 @@ class JobDiscoveryAgent:
                             if 'score_reason' in job_data:
                                 del job_data['score_reason']
 
-                            all_jobs.append(Job(**job_data))
+                            local_jobs.append(Job(**job_data))
                         except Exception as parse_e:
                             logger.error(f"Error converting job: {parse_e}")
-                            
             except Exception as e:
                 logger.error(f"[DiscoveryAgent] Scraper {portal} failed: {e}")
+            return local_jobs
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(target_portals) or 1) as executor:
+            future_to_portal = {executor.submit(run_scraper, p): p for p in target_portals}
+            for future in concurrent.futures.as_completed(future_to_portal):
+                portal_jobs = future.result()
+                all_jobs.extend(portal_jobs)
                 
         logger.info(f"[DiscoveryAgent] Total jobs discovered: {len(all_jobs)}")
         return all_jobs

@@ -7,6 +7,7 @@ import hashlib
 import threading
 from typing import Optional, Any
 from loguru import logger
+import logging
 from tenacity import (
     retry, stop_after_attempt, wait_exponential,
     retry_if_exception_type, before_sleep_log,
@@ -107,6 +108,7 @@ class LLMClient:
             logger.error(f"JSON parse error: {e}\nRaw:\n{raw[:500]}")
             raise LLMError(f"LLM returned non-JSON: {raw[:200]}")
 
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_exception_type(Exception), before_sleep=before_sleep_log(logger, logging.WARNING))
     def _groq_chat(self, key: str, system: str, user: str, temp: float, top_p: float, json_mode: bool) -> str:
         client = groq_sdk.Groq(api_key=key)
         kwargs: dict[str, Any] = {
@@ -148,6 +150,7 @@ class LLMClient:
         _cache.set(system, user, temp, result)
         return result
 
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_exception_type(Exception), before_sleep=before_sleep_log(logger, logging.WARNING))
     def _gemini_chat(self, system: str, user: str, temp: float, top_p: float, json_mode: bool) -> str:
         gemini_key = KEY_ROTATOR.get_gemini_key()
         if not gemini_key:

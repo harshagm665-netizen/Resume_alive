@@ -13,16 +13,16 @@ class UpstashRedisClient:
     def __init__(self):
         self.url = UPSTASH_REDIS_REST_URL.rstrip("/")
         self.token = UPSTASH_REDIS_REST_TOKEN
+        
+        if not self.url or not self.token:
+            raise RuntimeError("Upstash Redis credentials (UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN) are missing. Cannot initialize DedupGuard/Cache.")
+            
         self.headers = {
             "Authorization": f"Bearer {self.token}",
             "Content-Type": "application/json"
         }
         
     def _execute(self, command: str, *args) -> Any:
-        if not self.url or not self.token:
-            logger.warning("Upstash Redis not configured. Skipping cache operation.")
-            return None
-            
         payload = [command] + list(args)
         try:
             resp = requests.post(self.url, headers=self.headers, json=payload, timeout=5)

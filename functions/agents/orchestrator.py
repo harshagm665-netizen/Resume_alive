@@ -37,10 +37,30 @@ class Orchestrator:
         jobs, dropped = self.dedup_guard.filter(uid, raw_jobs)
         
         # 1.8 Index for Hybrid Retrieval
+        # Ensure all jobs have a job_id before indexing so chunks are mapped correctly
+        for job in jobs:
+            if not job.job_id:
+                job.job_id = job.dedup_key()
+                
         self.retrieval.index_jobs(jobs)
         
         # 1.9 Search (for testing retrieval)
-        top_matches = self.retrieval.search(query, limit=5)
+        top_matches_chunks = self.retrieval.search(query, limit=10)
+        
+        # Map chunks back to Job objects using parent_id
+        job_map = {job.job_id: job for job in jobs}
+        top_matches = []
+        seen = set()
+        
+        for chunk in top_matches_chunks:
+            parent_id = chunk.get("parent_id")
+            if parent_id in job_map and parent_id not in seen:
+                seen.add(parent_id)
+                top_matches.append(job_map[parent_id])
+                
+            if len(top_matches) >= 5: # Limit to top 5 unique jobs
+                break
+                
         logger.info(f"Top {len(top_matches)} matches retrieved.")
         
         # 2. Save Session
