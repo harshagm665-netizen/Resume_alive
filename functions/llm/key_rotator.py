@@ -29,7 +29,8 @@ class KeyRotator:
         with self._lock:
             if key not in self._exhausted:
                 logger.warning(f"Groq key ...{key[-6:]} marked as failed. Rotating.")
-                self._exhausted.add(key)
+                if len(self._groq_keys) > 1:
+                    self._exhausted.add(key)
                 self._idx += 1
 
     def get_gemini_key(self) -> str:

@@ -81,7 +81,8 @@ class LLMClient:
                 KEY_ROTATOR.mark_failed(key)
                 return self._groq_with_rotation(system, user, temp, top_p, json_mode)
             except Exception as e:
-                logger.warning(f"Groq chat failed: {e}")
+                import traceback
+                logger.warning(f"Groq chat failed ({type(e).__name__}): {e}\n{traceback.format_exc()}")
                 KEY_ROTATOR.mark_failed(key)
                 return self._groq_with_rotation(system, user, temp, top_p, json_mode)
         else:
@@ -128,13 +129,15 @@ class LLMClient:
         return resp.choices[0].message.content or ""
 
     def _groq_with_rotation(self, system: str, user: str, temp: float, top_p: float, json_mode: bool) -> str:
+        tried_keys = set()
         for _ in range(20):
             key = KEY_ROTATOR.current_groq()
-            if not key:
-                logger.warning("All Groq keys exhausted -> Gemini fallback")
+            if not key or key in tried_keys:
+                logger.warning("All Groq keys exhausted or tried -> Gemini fallback")
                 result = self._gemini_chat(system, user, temp, top_p, json_mode)
                 _cache.set(system, user, temp, result)
                 return result
+            tried_keys.add(key)
             try:
                 result = self._groq_chat(key, system, user, temp, top_p, json_mode)
                 _cache.set(system, user, temp, result)
@@ -143,7 +146,8 @@ class LLMClient:
                 logger.warning(f"Groq key ...{key[-6:]} rate limited, rotating.")
                 KEY_ROTATOR.mark_failed(key)
             except Exception as e:
-                logger.warning(f"Groq key ...{key[-6:]} failed: {e}")
+                import traceback
+                logger.warning(f"Groq key ...{key[-6:]} failed ({type(e).__name__}): {e}\n{traceback.format_exc()}")
                 KEY_ROTATOR.mark_failed(key)
 
         result = self._gemini_chat(system, user, temp, top_p, json_mode)
