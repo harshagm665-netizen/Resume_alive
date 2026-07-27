@@ -38,7 +38,8 @@ class JobMatcherAgent(BaseAgent):
         
         try:
             result = llm.chat_json(JOB_SCORE_SYSTEM, user_prompt, self.task_type)
-            job.ai_score = float(result.get("score", 0))
+            score_val = result.get("score", 0)
+            job.ai_score = float(score_val) if score_val is not None else 0.0
             job.metadata["match_level"] = result.get("match_level", "Unknown")
             job.metadata["matching_skills"] = result.get("matching_skills", [])
             job.metadata["missing_skills"] = result.get("missing_skills", [])
@@ -60,7 +61,8 @@ class JobMatcherAgent(BaseAgent):
         )
         try:
             result = llm.chat_json(GENERIC_SEARCH_SCORE_SYSTEM, user_prompt, self.task_type)
-            job.ai_score = float(result.get("score", 0))
+            score_val = result.get("score", 0)
+            job.ai_score = float(score_val) if score_val is not None else 0.0
             job.metadata["match_level"] = result.get("match_level", "Unknown")
             job.metadata["score_reason"] = result.get("reason", "")
             return result
