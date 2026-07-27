@@ -12,6 +12,9 @@ from db.firestore_client import fs_client
 from db.models import UserProfile
 from config import TG_TOKEN
 
+_in_memory_state = {}
+_in_memory_profiles = {}
+
 def send_message(chat_id: str, text: str) -> Optional[dict]:
     url = f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage"
     payload = {
@@ -97,12 +100,19 @@ def handle_webhook(update: dict):
     # Check Redis first for speed, fallback to profile/default
     from cache.redis_client import redis_client
     bot_state = redis_client.get(f"bot_state:{chat_id}")
+    
+    # Ultimate fallback for local testing without credentials
+    global _in_memory_state
+    if not bot_state:
+        bot_state = _in_memory_state.get(chat_id)
+        
     if not bot_state:
         bot_state = profile.bot_state if profile else "WAITING_FOR_RESUME"
     
     def set_bot_state(uid: str, state: str):
         redis_client.set(f"bot_state:{uid}", state)
         fs_client.update_bot_state(uid, state)
+        _in_memory_state[uid] = state
         
     text = msg.get("text", "").strip()
     
@@ -145,6 +155,7 @@ def handle_webhook(update: dict):
         profile.skill_graph = extracted
         profile.bot_state = "CONFIRMING_ROLE"
         fs_client.save_user_profile(profile)
+        _in_memory_profiles[chat_id] = profile
         
         # Ensure Redis cache is updated too
         set_bot_state(chat_id, "CONFIRMING_ROLE")
@@ -160,6 +171,9 @@ def handle_webhook(update: dict):
         return
         
     if bot_state == "CONFIRMING_ROLE":
+        if not profile:
+            profile = _in_memory_profiles.get(chat_id)
+            
         if not profile:
             set_bot_state(chat_id, "WAITING_FOR_RESUME")
             send_message(chat_id, "I couldn't find your profile\\. Please upload your resume again or type /start\\.")
