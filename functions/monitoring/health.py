@@ -1,14 +1,12 @@
 """
 functions/monitoring/health.py — Comprehensive system health checks.
 """
-from firebase_functions import https_fn
 from loguru import logger
 
 from cache.redis_client import redis_client
 from db.firestore_client import get_db
 
-@https_fn.on_request()
-def deep_health_check(req: https_fn.Request) -> https_fn.Response:
+def deep_health_check() -> dict:
     """Checks all dependencies (Firestore, Redis, LLM limits)."""
     status = {"status": "ok", "dependencies": {}}
     
@@ -35,5 +33,4 @@ def deep_health_check(req: https_fn.Request) -> https_fn.Response:
         status["status"] = "degraded"
         status["dependencies"]["redis"] = f"error: {e}"
         
-    http_status = 200 if status["status"] == "ok" else 503
-    return https_fn.Response(str(status), status=http_status, headers={"Content-Type": "application/json"})
+    return status
