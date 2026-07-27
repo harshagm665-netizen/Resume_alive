@@ -25,21 +25,30 @@ class Orchestrator:
         self.interview_prep = InterviewPrepAgent()
         self.cold_email = ColdEmailAgent()
         
-    def process_search_request(self, uid: str, query: str, location: str, portals: List[str] = None) -> List[Dict[str, Any]]:
+    def process_search_request(self, uid: str, query: str, location: str, portals: List[str] = None, progress_callback=None) -> List[Dict[str, Any]]:
         """Phase 2 Orchestrator: Discovers jobs and saves to DB."""
         session_id = str(uuid.uuid4())
         logger.info(f"Starting session {session_id} for user {uid}")
         
+        def notify(msg):
+            if progress_callback:
+                progress_callback(msg)
+                
         # 1. Discovery
+        notify(f"Discovering jobs for '{query}'...")
         raw_jobs = self.discovery.discover_jobs(query, location, max_results=10, portals=portals)
         
+        
         # 1.5 Deduplication and Spam Filter
+        notify(f"Filtering {len(raw_jobs)} discovered jobs...")
         jobs, dropped = self.dedup_guard.filter(uid, raw_jobs)
         
         # 1.8 Index for Hybrid Retrieval
+        notify("Indexing jobs for semantic search...")
         self.retrieval.index_jobs(jobs)
         
         # 1.9 Search
+        notify("Re-ranking best matches...")
         top_matches = self.retrieval.search(query, limit=5)
         logger.info(f"Top {len(top_matches)} matches retrieved.")
         
@@ -57,6 +66,7 @@ class Orchestrator:
         # 3. Process, Score and Save Jobs
         profile = fs_client.get_user_profile(uid)
         
+        notify("Scoring and saving jobs...")
         saved_jobs = []
         for job in top_matches:
             # Score job
@@ -72,6 +82,7 @@ class Orchestrator:
             # Generate personalized insights for top matches (score > 70)
             if profile and job.ai_score > 70:
                 logger.info(f"Generating interview prep and cold email for high-match job: {job_id}")
+                notify(f"Generating personalized insights for {job.company}...")
                 interview_qs = self.interview_prep.generate_questions(profile, job)
                 email_draft = self.cold_email.draft_email(profile, job)
                 

@@ -38,6 +38,16 @@ class FirestoreClient:
             return UserProfile(**doc.to_dict())
         return None
         
+    def update_bot_state(self, uid: str, state: str) -> None:
+        if not self.db: return
+        doc_ref = self.db.collection('USERS').document(uid)
+        doc = doc_ref.get()
+        if not doc.exists:
+            profile = UserProfile(uid=uid, bot_state=state)
+            self.save_user_profile(profile)
+        else:
+            doc_ref.update({"bot_state": state})
+        
     def save_job(self, job: Job) -> str:
         """Saves a job and returns its ID."""
         # Clean ID to be safe for firestore paths

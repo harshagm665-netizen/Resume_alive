@@ -18,6 +18,7 @@ class UserProfile(BaseModel):
     preferred_locations: List[str] = Field(default_factory=list)
     salary_expectations: Dict[str, Any] = Field(default_factory=dict)
     skill_graph: Dict[str, Any] = Field(default_factory=dict)
+    bot_state: str = "WAITING_FOR_RESUME"
     parsed_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=now_utc)
 
