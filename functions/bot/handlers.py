@@ -103,8 +103,11 @@ def handle_webhook(update: dict):
     
     # Ultimate fallback for local testing without credentials
     global _in_memory_state
+    logger.info(f"Incoming webhook. Current _in_memory_state: {_in_memory_state}")
+    
     if not bot_state:
         bot_state = _in_memory_state.get(chat_id)
+        logger.info(f"Fallback to _in_memory_state: {bot_state}")
         
     if not bot_state:
         bot_state = profile.bot_state if profile else "WAITING_FOR_RESUME"
@@ -113,6 +116,7 @@ def handle_webhook(update: dict):
         redis_client.set(f"bot_state:{uid}", state)
         fs_client.update_bot_state(uid, state)
         _in_memory_state[uid] = state
+        logger.info(f"Set bot_state for {uid} to {state}. Memory dict is now: {_in_memory_state}")
         
     text = msg.get("text", "").strip()
     

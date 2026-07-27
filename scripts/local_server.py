@@ -50,6 +50,14 @@ async def telegram_webhook_local(request: Request, background_tasks: BackgroundT
 def health_check():
     return {"status": "healthy"}
 
+@app.get("/state")
+def get_state():
+    try:
+        from bot.handlers import _in_memory_state
+        return {"state": _in_memory_state}
+    except Exception as e:
+        return {"error": str(e)}
+
 if __name__ == "__main__":
     print("======================================================")
     print("🚀 Local Monitor Server is starting...")
