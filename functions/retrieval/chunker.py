@@ -16,9 +16,10 @@ class JobChunker:
         # For this prototype, we'll split the description by newlines and group into chunks of ~200 chars.
         
         chunks = []
-        desc = job.description
-        if not desc:
-            return chunks
+        desc = job.description or ""
+        
+        if not desc.strip():
+            desc = f"{job.title} at {job.company} in {job.location}. Salary: {job.salary}"
             
         paragraphs = [p.strip() for p in desc.split("\n") if p.strip()]
         
