@@ -20,7 +20,7 @@ class InterviewPrepAgent(BaseAgent):
             name="Interview Prep Agent",
             role="Expert technical interviewer and career coach",
             goal="Analyze candidate profile against a job description and generate targeted mock interview questions.",
-            task_type=TaskType.ANALYSIS
+            task_type=TaskType.JSON_OUTPUT
         )
 
     @track_metrics("interview_prep_agent", "generate_questions")
@@ -47,7 +47,7 @@ class InterviewPrepAgent(BaseAgent):
         )
         
         try:
-            response = llm.chat_json(system_prompt, user_prompt, TaskType.ANALYSIS)
+            response = llm.chat_json(system_prompt, user_prompt, TaskType.JSON_OUTPUT)
             questions = response.get("questions", [])
             if not isinstance(questions, list) or len(questions) == 0:
                 return ["Could not generate specific questions at this time."]

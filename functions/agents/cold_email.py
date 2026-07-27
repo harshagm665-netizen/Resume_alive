@@ -18,7 +18,7 @@ class ColdEmailAgent(BaseAgent):
             name="Cold Email Agent",
             role="Career strategist and executive assistant",
             goal="Write a highly personalized LinkedIn outreach message.",
-            task_type=TaskType.CREATIVE
+            task_type=TaskType.COVER_LETTER
         )
 
     @track_metrics("cold_email_agent", "draft_email")
@@ -47,8 +47,8 @@ class ColdEmailAgent(BaseAgent):
         )
         
         try:
-            # We use TaskType.CREATIVE here because we want an engaging email draft
-            response = llm.chat(system_prompt, user_prompt, TaskType.CREATIVE)
+            # We use TaskType.COVER_LETTER here because we want an engaging email draft
+            response = llm.chat(system_prompt, user_prompt, TaskType.COVER_LETTER)
             return response.strip()
         except Exception as e:
             logger.error(f"Failed to generate cold email draft: {e}")
